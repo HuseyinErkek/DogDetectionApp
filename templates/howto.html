@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %} Nasıl Kullanılır? {% endblock %}
+
+{% block content %}
+<main class="main-content">
+        <section id="how-it-works" class="container text-center my-5">
+            <h2 class="fw-bold">Nasıl Çalışır?</h2>
+            <p class="lead">Şehir Kameraları platformu, anlık olarak başıboş köpekleri tespit etmek için yapay zeka ve kameralar kullanır. Aşağıda, sistemin nasıl çalıştığını görebilirsiniz:</p>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <i class="bi bi-camera-video-fill" style="font-size: 50px;"></i>
+                    <h4>Canlı Yayın</h4>
+                    <p>Şehirdeki kameralarımızdan canlı görüntü alarak, sokaklardaki hareketliliği izleriz.</p>
+                </div>
+                <div class="col-md-4">
+                    <i class="bi bi-robot" style="font-size: 50px;"></i>
+                    <h4>Yapay Zeka Tespiti</h4>
+                    <p>Yapay zeka algoritmalarımız, kameradaki görüntüleri analiz eder ve başıboş köpekleri tespit eder.</p>
+                </div>
+                <div class="col-md-4">
+                    <i class="bi bi-map-fill" style="font-size: 50px;"></i>
+                    <h4>Konum Belirleme</h4>
+                    <p>Yapay zeka tarafından tespit edilen köpeklerin konumları, harita üzerinde işaretlenir ve kullanıcılarımıza sunulur.</p>
+                </div>
+                <div class="col-md-4">
+                    <i class="bi bi-bar-chart-line" style="font-size: 50px;"></i>
+                    <h4>Veri Analizi</h4>
+                    <p>Tespit edilen köpeklerin verileri toplanır, analiz edilir ve bölgeler arasındaki farklar ile zaman bazlı değişiklikler değerlendirilir. Aynı zamanda veri tabanına kaydedilir.</p>
+                </div>
+                <div class="col-md-4">
+                    <i class="bi bi-bell-fill" style="font-size: 50px;"></i>
+                    <h4>Uyarı Sistemi</h4>
+                    <p>Tehlike arz eden başıboş köpekler tespit edildiğinde, sistem yetkililere ve kullanıcılara anında uyarı gönderir.</p>
+                </div>
+                <div class="col-md-4">
+                    <i class="bi bi-lightbulb-fill" style="font-size: 50px;"></i>
+                    <h4>Eğitim ve Sürekli Öğrenme</h4>
+                    <p>Sistem, her yeni tespit ile öğrenmeye devam eder. Yeni veriler ve görüntüler, modelin doğruluğunu artırarak daha iyi sonuçlar elde edilmesini sağlar.</p>
+                </div>
+            </div>
+
+        </section>
+
+
+
+</main>
+
+{% endblock%}

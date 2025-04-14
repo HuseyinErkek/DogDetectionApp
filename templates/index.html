@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %} Anasayfa {% endblock %}
+
+{% block content %}
+
+ <main class="main-content">
+ <section id="about" class="container text-center my-5">
+            <h2 class="fw-bold text-white">Hakkımızda</h2>
+            <p class="text-white">"Şehir Kameraları" platformu, başıboş köpeklerin tespiti için özel olarak geliştirilmiş bir uygulamadır.
+                Yapay zeka destekli sistemimiz, şehirdeki kameralar aracılığıyla anlık olarak şehirdeki kameralaramızda
+                görüntü alanına giren başıboş köpekleri , tehlike arz ediyorsa tehlike durumlarını ve
+                yerlerini tespit eder ve kullanıcılarımıza ve tehlike arz ettiği durumda yetkililere bu verileri sunar.
+                Amacımız, başıboş köpeklerin zarar verebileceği halk güvenliğine
+                sağlamak, onları barınaklara yönlendirmek ve sokak hayvanlarıyla ilgili farkındalığı artırmaktır. Bu
+                platform, şehirlerin sokaklarında daha güvenli bir ortam yaratmayı hedeflemektedir.</p>
+        </section>
+
+        <section id="features" class="container my-5">
+            <h2 class="text-center mb-4 text-white">Özellikler</h2>
+
+            <div id="featureCarousel" class="carousel slide" data-bs-ride="carousel">
+              <div class="carousel-inner">
+
+                <div class="carousel-item active"  data-bs-interval="3500">
+                  <div class="row justify-content-center">
+                    <div class="col-md-6 text-center text-white">
+                      <img src="/static/images/sonuc1.png" class="d-block w-100 rounded" alt="Canlı Yayın">
+                      <h5 class="fw-bold mt-3">Canlı Yayın</h5>
+                      <p>Şehir kameralarından gerçek zamanlı görüntü alın, sokaklardaki hareketliliği canlı olarak izleyin.</p>
+                    </div>
+                  </div>
+                </div>
+
+
+                <div class="carousel-item"  data-bs-interval="3500">
+                  <div class="row justify-content-center">
+                    <div class="col-md-6 text-center text-white">
+                      <img src="/static/images/sonuc3.jpg" class="d-block w-100 rounded" alt="Köpek Tespiti">
+                      <h5 class="fw-bold mt-3">Köpek Tespiti</h5>
+                      <p>Yapay zeka destekli algoritmalarla başıboş köpekleri anında tespit edin ve takip edin.</p>
+                    </div>
+                  </div>
+                </div>
+
+
+                <div class="carousel-item"  data-bs-interval="3500">
+                  <div class="row justify-content-center">
+                    <div class="col-md-6 text-center text-white">
+                      <img src="/static/images/itermap.jpg" class="d-block w-100 rounded" alt="Harita Desteği">
+                      <h5 class="fw-bold mt-3">Harita Desteği</h5>
+                      <p>Kameraları harita üzerinde konumlarıyla birlikte görüntüleyerek kolay erişim sağlayın.</p>
+                    </div>
+                  </div>
+                </div>
+
+
+                <div class="carousel-item"  data-bs-interval="3500">
+                  <div class="row justify-content-center">
+                    <div class="col-md-6 text-center text-white">
+                      <img src="/static/images/analiz.jpeg" class="d-block w-100 rounded" alt="İstatistiksel Analiz">
+                      <h5 class="fw-bold mt-3">İstatistiksel Analiz</h5>
+                      <p>Köpek tespitlerine dair bölgesel, zaman bazlı analiz ve grafiksel verilerle detaylı inceleme yapın.</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+
+              <button class="carousel-control-prev" type="button" data-bs-target="#featureCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Önceki</span>
+              </button>
+              <button class="carousel-control-next" type="button" data-bs-target="#featureCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Sonraki</span>
+              </button>
+            </div>
+          </section>
+
+ </main>
+
+{% endblock %}
+
+
+
+</html>
