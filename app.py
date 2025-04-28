@@ -1,26 +1,36 @@
-# main.py veya uygulamanızın ana dosyası
+# Gerekli kütüphaneleri içe aktarıyoruz
 import os
-from flask import Flask, render_template
+import threading
+import uuid
 from datetime import datetime
 
-# models.py dosyasındaki db ve modelleri içeri aktarıyoruz
-from models import db, Cameras, DetectionInfo
+# Flask ve ilgili araçları içe aktarıyoruz
+from flask import Flask, render_template, request, redirect, url_for
+from werkzeug.utils import secure_filename
 
-# Veritabanı adı
+# Veritabanı modellerini içeren 'models.py' dosyasını içe aktarıyoruz
+from models import db, Cameras, DetectionInfo
+from video_processing import process_uploaded_video
+
+# Yüklenen videolar için klasörü oluşturuyoruz (eğer yoksa)
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Veritabanı dosyasının adını tanımlıyoruz
 DB_NAME = "dogdetection.db"
 
 # Flask uygulamasını başlatıyoruz
 DogDetec = Flask(__name__)
 
-# Flask konfigürasyonlarını ayarlıyoruz
-DogDetec.config['SECRET_KEY'] = '1234asd'
-DogDetec.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'
-DogDetec.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Bu ayar önerilir, gereksiz bildirimlerden kaçınmak için
+# Flask uygulamasının yapılandırmasını ayarlıyoruz
+DogDetec.config['SECRET_KEY'] = '1234asd'  # Uygulama için gizli anahtar
+DogDetec.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'  # Veritabanı bağlantı URI'si
+DogDetec.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# SQLAlchemy bağlantısını başlatıyoruz
+# SQLAlchemy kütüphanesini Flask uygulamasına bağlıyoruz
 db.init_app(DogDetec)
 
-# Anasayfa route
+
 @DogDetec.route('/')
 def home():
     return render_template('index.html')
@@ -37,20 +47,50 @@ def camera():
 def howto():
     return render_template("howto.html")
 
-@DogDetec.route('/upload.html')
-def upload():
-    return render_template("upload.html")
+# Video yükleme işlemleri için route tanımı (GET ve POST metotlarını kabul eder)
+@DogDetec.route('/upload', methods=['GET', 'POST'])
+def upload_video():
+    """
+    GET isteği: Video yükleme formunu (upload.html) gösterir.
+    POST isteği: Yüklenen video dosyasını işler.
+    """
+    if request.method == 'POST':
+        # Formda 'video' adında bir dosya olup olmadığını kontrol ediyoruz
+        if 'video' not in request.files:
+            return redirect(request.url)  # Eğer yoksa aynı sayfaya geri yönlendiriyoruz
 
-# Uygulama başlatıldığında veritabanını kontrol et
+        file = request.files['video']  # Yüklenen video dosyasını alıyoruz
+        if file.filename == '':
+            return redirect(request.url)  # Eğer dosya adı boşsa aynı sayfaya geri yönlendiriyoruz
+
+        if file:
+            # Güvenli bir dosya adı oluşturuyoruz (benzersiz ID ile birlikte)
+            filename = str(uuid.uuid4()) + secure_filename(file.filename)
+            # Dosyanın kaydedileceği tam yolu oluşturuyoruz
+            filepath = os.path.join(DogDetec.config['UPLOAD_FOLDER'], filename)
+            # Dosyayı belirtilen konuma kaydediyoruz
+            file.save(filepath)
+
+            # Yüklenen videoyu işleyecek bir fonksiyonu ayrı bir thread'de başlatıyoruz
+            threading.Thread(target=process_uploaded_video,
+                             args=(filepath, filename)).start()
+
+            # Yükleme başarılı olduktan sonra 'upload_success' sayfasına yönlendiriyoruz
+            return redirect(url_for('upload_success'))
+    # GET isteği durumunda video yükleme formunu gösteriyoruz
+    return render_template('upload.html')
+
+# Uygulama ilk kez çalıştırıldığında veritabanını oluşturma kontrolü
 if __name__ == '__main__':
+    # Veritabanı dosyasının var olup olmadığını kontrol ediyoruz
     if not os.path.exists(DB_NAME):
-        # Flask uygulama bağlamı içinde veritabanı oluşturma işlemi
+        # Flask uygulama bağlamı içinde veritabanını oluşturuyoruz
         with DogDetec.app_context():
             db.create_all()
-        print("Database created")
+        print("Veritabanı oluşturuldu.")
     else:
-        print("Database already exists")
+        print("Veritabanı zaten mevcut.")
 
-    # Flask uygulamasını çalıştırıyoruz
+    # Flask uygulamasını geliştirme modunda (debug=True) çalıştırıyoruz
     DogDetec.debug = True
-    DogDetec.run()
+    DogDetec.run() # Tüm ağlardan erişilebilir hale getiriyoruz (isteğe bağlı)
