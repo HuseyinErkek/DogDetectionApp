@@ -75,8 +75,8 @@ def upload_video():
             threading.Thread(target=process_uploaded_video,
                              args=(filepath, filename)).start()
 
-            # Yükleme başarılı olduktan sonra 'upload_success' sayfasına yönlendiriyoruz
-            return redirect(url_for('upload_success'))
+            # Yükleme başarılı olduktan sonra 'upload' sayfasına yeniden yönlendiriyoruz
+            return redirect(request.url)
     # GET isteği durumunda video yükleme formunu gösteriyoruz
     return render_template('upload.html')
 

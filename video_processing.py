@@ -40,9 +40,10 @@ def process_uploaded_video(filepath, filename):
             conn.commit()
             conn.close()
 
-    # Video işleme tamamlandıktan sonra kaynağı serbest bırakıyoruz
+
 
         time.sleep(0.1)
+    # Video işleme tamamlandıktan sonra kaynağı serbest bırakıyoruz
     cap.release()
     cv2.destroyAllWindows()
     print(f"Video processing completed for {filename}")
