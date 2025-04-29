@@ -1,15 +1,16 @@
-# Gerekli kütüphaneleri içe aktarıyoruz
+
 import os
 import threading
 import uuid
-from datetime import datetime
+
+
 
 # Flask ve ilgili araçları içe aktarıyoruz
 from flask import Flask, render_template, request, redirect, url_for
 from werkzeug.utils import secure_filename
 
 # Veritabanı modellerini içeren 'models.py' dosyasını içe aktarıyoruz
-from models import db, Cameras, DetectionInfo
+from models import db, Cameras, DetectionCameraInfo
 from video_processing import process_uploaded_video
 
 # Yüklenen videolar için klasörü oluşturuyoruz (eğer yoksa)
@@ -76,9 +77,17 @@ def upload_video():
                              args=(filepath, filename)).start()
 
             # Yükleme başarılı olduktan sonra 'upload' sayfasına yeniden yönlendiriyoruz
-            return redirect(request.url)
+            return redirect(url_for('upload_success'))
     # GET isteği durumunda video yükleme formunu gösteriyoruz
     return render_template('upload.html')
+
+@DogDetec.route('/upload/success')
+def upload_success():
+    return render_template('upload_succes.html')
+
+
+
+
 
 # Uygulama ilk kez çalıştırıldığında veritabanını oluşturma kontrolü
 if __name__ == '__main__':
