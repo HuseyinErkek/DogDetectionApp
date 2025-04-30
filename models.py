@@ -18,12 +18,15 @@ class DetectionCameraInfo(db.Model):
 
 
 class DetectionUploadedVideoInfo(db.Model):
-    id = db.Column(db.Integer, db.ForeignKey('DetectionCameraInfo.id'),autoincrement=True)
-    video_id = db.Column(db.Integer,autoincrement=True)
+    id = db.Column(db.Integer, db.ForeignKey('detection_camera_info.id'), primary_key=True)
+    video_id = db.Column(db.Integer, autoincrement=True)
     filename = db.Column(db.String(255), nullable=False)
     total_people = db.Column(db.Integer)
     total_dog = db.Column(db.Integer)
     confidence = db.Column(db.Float)
     status = db.Column(db.String(255), nullable=False)
     detectionTime = db.Column(db.DateTime, server_default=db.func.now())
+
+    camera_info = db.relationship('DetectionCameraInfo', backref=db.backref('uploaded_videos', lazy=True))
+
 
