@@ -1,63 +1,95 @@
-import sqlite3
 import os
+import sqlite3
+import time
+from datetime import datetime
+
+import cv2
 from ultralytics import YOLO
-from dbmaneger import init_db, log_to_db
+from dbmaneger import init_db, log_to_db, log_dog_detections_to_db
+from settings import ProcessingSettings, ModelSettings
 
-# YOLOv8 model yolu
-MODEL_PATH = 'model/yolov8m_epochs50.pt'
 
-# Takip edilecek sınıflar
-CLASS_NAMES = {
-    0: 'person',
-    16: 'dog'
-}
+class VideoProcessor:
+    def __init__(self, settings: ProcessingSettings, model_settings: ModelSettings, conn: sqlite3.Connection):
+        self.settings = settings
+        self.model_settings = model_settings
+        self.conn = init_db()
+        self.model = YOLO(self.model_settings.model_path)  # Modeli yolundan yükle
 
-def process_uploaded_video(filepath, filename):
-    # Modeli yükle
-    model = YOLO(MODEL_PATH)
+    def process_video_periodic(self, filepath: str, filename: str):
+        cap = cv2.VideoCapture(filepath)
 
-    # Veritabanı bağlantısı
-    conn = init_db()
+        if not cap.isOpened():
+            print(f"Video açılamadı: {filepath}")
+            return
 
-    # Çıktı klasörü
-    output_dir = os.path.join(os.path.dirname(filepath), 'processed_videos')
-    os.makedirs(output_dir, exist_ok=True)
+        output_dir = os.path.join(os.path.dirname(filepath), 'processed_videos_periodic')
+        os.makedirs(output_dir, exist_ok=True)
 
-    # Takip işlemi
-    results = model.track(
-        source=filepath,
-        stream=True,
-        conf=0.5,
-        iou=0.5,
-        persist=True,
-        save=True,
-        project=output_dir,
-        name="takip_sonucu",
-        tracker="botsort.yaml"
-    )
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        frame_count = 0
+        segment_number = 1
 
-    # Toplam insan ve köpek ID'lerini sakla
-    people_ids = set()
-    dog_ids = set()
+        while frame_count < total_frames:
+            segment_start_time = time.time()
+            people_ids = set()
+            dog_ids = set()
+            dog_detections = []  # (Dog id, detection_time) listesi
+            person_detections = [] #(Person id, detection_time) listesi
 
-    # Tüm frameleri gez
-    for r in results:
-        if r.boxes.id is not None:
-            ids = r.boxes.id.cpu().tolist()
-            classes = r.boxes.cls.cpu().tolist()
+            while time.time() - segment_start_time < self.settings.work_duration and frame_count < total_frames:
+                ret, frame = cap.read()
+                if not ret:
+                    break
 
-            for obj_id, cls in zip(ids, classes):
-                if int(cls) == 0:
-                    people_ids.add(int(obj_id))
-                elif int(cls) == 16:
-                    dog_ids.add(int(obj_id))
+                if frame_count % (self.settings.skip_rate + 1) == 0:
+                    results = self.model.track(
+                        source=frame,
+                        stream=True,
+                        conf=0.5,
+                        iou=0.5,
+                        persist=True,
+                        save=True,
+                        project=output_dir,
+                        name="takip_sonucu",
+                        tracker="config/deepsort.yaml"
+                    )
 
-    # Sayıları al
-    total_people = len(people_ids)
-    total_dogs = len(dog_ids)
+                    if results and results[0].boxes.id is not None:
+                        ids = results[0].boxes.id.cpu().tolist()
+                        classes = results[0].boxes.cls.cpu().tolist()
 
-    # Veritabanına kaydet
-    log_to_db(conn, filename, total_people, total_dogs, 0.0, "")
-    conn.close()
+                        for obj_id, cls in zip(ids, classes):
+                            detection_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                            if int(cls) == 0:
+                                people_ids.add(int(obj_id))
+                                log_dog_detections_to_db(self.conn,obj_id,detection_time)
+                                person_detections.append((int(obj_id), detection_time))
+                            elif int(cls) == 16:
+                                dog_ids.add(int(obj_id))
+                                dog_detections.append((int(obj_id), detection_time))
 
-    print(f"Takip tamamlandı. İnsan: {total_people}, Köpek: {total_dogs}")
+                frame_count += 1
+
+            # Veritabanına köpek tespitlerini kaydet
+            log_dog_detections_to_db(self.conn, filename, dog_detections)
+
+            # Segment istatistiklerini kaydet
+            log_to_db(
+                self.conn,
+                filename,
+                detection_time,
+                len(people_ids),
+                len(dog_ids),
+            )
+
+            # Bekleme süresi
+            if frame_count < total_frames:
+                print(f"⏳ Bekleniyor ({self.settings.wait_duration} sn)...")
+                time.sleep(self.settings.wait_duration)
+                segment_number += 1
+            else:
+                print("🎬 Video işleme tamamlandı.")
+
+        cap.release()
+        self.conn.close()
