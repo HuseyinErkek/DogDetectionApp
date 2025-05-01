@@ -1,0 +1,5 @@
+{
+  "skip_rate": 3,
+  "work_duration": 60,
+  "wait_duration": 120,
+}
