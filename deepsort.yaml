@@ -1,0 +1,8 @@
+# deepsort.yaml — İnsan ve köpek takibi için önerilen ayarlar
+
+max_age: 50                # Bir nesne kaç frame boyunca görünmese de takipte tutulsun
+n_init: 2                  # Takip başlatmak için gereken minimum tespit sayısı
+nn_budget: 100             # Geçmişe dönük kaç re-id özelliği saklansın
+max_cosine_distance: 0.3   # Daha hassas eşleşme için varsayılan 0.2 yerine 0.3
+model_type: osnet_x0_25    # Hafif ama yeterince güçlü re-ID modeli
+overlap_thresh: 0.7        # Tespit kutularının çakışma toleransı
