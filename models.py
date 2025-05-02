@@ -1,4 +1,6 @@
 # models.py
+from datetime import datetime
+
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
@@ -35,16 +37,18 @@ class SegmentStatistic(db.Model):
     total_dog = db.Column(db.Integer)
     total_people = db.Column(db.Integer)
 
-#-------------------------------
+
 # Object Model (Köpek veya Person gibi nesneleri tanımlar)
 class Object(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    object_type = db.Column(db.String(50), nullable=False)  # 'person', 'dog' vs.
+    model_object_id = db.Column(db.Integer, unique=True, nullable=False)  # modelin verdiği UNIQE ID
+    object_type = db.Column(db.String(50), nullable=False)
     detections = db.relationship('Detection', backref='object', lazy=True)
+
 
 # Detection Model (Her tespiti temsil eder)
 class Detection(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     filename = db.Column(db.String(255), nullable=False)  # Görüntü dosyası adı
-    detection_time = db.Column(db.DateTime, nullable=False)  # Tespit zamanı
-    object_id = db.Column(db.Integer, db.ForeignKey('object.id'), nullable=False)  # İlgili nesnenin ID'si
+    detection_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow()) #Tespit Zamanı
+    object_id = db.Column(db.Integer, db.ForeignKey('object.model_object_id'), nullable=False)
