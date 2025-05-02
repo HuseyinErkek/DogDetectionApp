@@ -58,14 +58,17 @@ class VideoProcessor:
                     if results and results[0].boxes.id is not None:
                         ids = results[0].boxes.id.cpu().tolist()
                         classes = results[0].boxes.cls.cpu().tolist()
+                        # Egerki her nesne icin ayri kayit istersen for donusu icinde tut,
+                        # sadece o framedeki tum tespitlerin ayni anda tespit edilmesini istiyorsak dongu disinda tut
+
 
                         for obj_id, cls in zip(ids, classes):
-                            detection_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                             if int(cls) == 0:
                                 people_ids.add(int(obj_id))
-                                log_dog_detections_to_db(self.conn,obj_id,detection_time)
+                                log_dog_detections_to_db(self.conn,obj_id,detection_time,filename)
                                 person_detections.append((int(obj_id), detection_time))
                             elif int(cls) == 16:
+                                detection_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                                 dog_ids.add(int(obj_id))
                                 dog_detections.append((int(obj_id), detection_time))
 
