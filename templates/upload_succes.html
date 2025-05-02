@@ -1,14 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+{% extends "base.html" %}
 
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% block title %}İşlem Başarılı{% endblock %}
 
- <h2> adgsgsdfdsdsgfds</h2>
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4 text-success">Video Başarıyla Yüklendi ve İşlendi</h2>
 
+  <div class="mb-4">
+    <video controls width="100%" height="auto">
+      <source src="{{ url_for('static', filename=result_video) }}" type="video/mp4">
+      Tarayıcınız video etiketini desteklemiyor.
+    </video>
+  </div>
 
-</body>
-</html>
+  <a href="{{ url_for('upload') }}" class="btn btn-primary">Yeni Video Yükle</a>
+</div>
+{% endblock %}

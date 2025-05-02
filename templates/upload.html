@@ -1,23 +1,26 @@
 {% extends 'base.html' %}
-{% block title %} Nasıl Kullanılır? {% endblock %}
+
+{% block title %}Nasıl Kullanılır?{% endblock %}
 
 {% block content %}
-    <main class="main-content">
-    <div class="form-container">
-        <h2 class="text-center mb-4 text-white">MP4 Video Yükleyiniz</h2>
-        <h1 class="text-center mb-3 bg-dark"> ASDAfsaf</h1>
-        <form method="POST" action="/upload" enctype="multipart/form-data">
-            <div class="mb-3">
-                <label for="videoFile" class="form-label">Video Dosyası (.mp4)</label>
-                <input class="form-control" type="file" id="videoFile" name="file" accept=".mp4" required>
-            </div>
-            <button type="submit" class="btn btn-custom w-100">Yükle ve İşle</button>
-        </form>
-
-    </div>
+<div id="upload-page-wrapper">
+    <main class="main-content" id="upload-page">
+        <div class="form-container" style="max-width: 600px; margin: 100px auto;">
+            <h2 class="text-center mb-4 text-white">MP4 Video Yükleyiniz</h2>
+            <p class="text-white mb-4">Aşağıdaki alandan bir .mp4 video dosyası yükleyerek köpek tespitini başlatabilirsiniz. Lütfen yalnızca uygun video formatını kullanın.</p>
+            <form method="POST" action="/upload" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="videoFile" class="form-label">Video Dosyası (.mp4)</label>
+                    <input class="form-control" type="file" id="videoFile" name="file" accept=".mp4" required>
+                </div>
+                <button type="submit" class="btn btn-custom btn-light w-100">Yükle ve İşle</button>
+            </form>
+        </div>
+          <div style="height: 400px;"></div>
 
 
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     </main>
+</div>
 {% endblock %}
