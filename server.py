@@ -10,8 +10,9 @@ from flask import Flask, render_template, request, redirect, url_for
 from werkzeug.utils import secure_filename
 
 # Veritabanı modellerini içeren 'models.py' dosyasını içe aktarıyoruz
-from models import db, Cameras, DetectionCameraInfo
-from video_processing import process_uploaded_video
+from models import db
+from process_uploaded_video import VideoProcessor
+from settings import ProcessingSettings, ModelSettings
 
 # Yüklenen videolar için klasörü oluşturuyoruz (eğer yoksa)
 UPLOAD_FOLDER = 'uploads'
@@ -65,18 +66,17 @@ def upload_video():
             return redirect(request.url)  # Eğer dosya adı boşsa aynı sayfaya geri yönlendiriyoruz
 
         if file:
-            # Güvenli bir dosya adı oluşturuyoruz (benzersiz ID ile birlikte)
             filename = str(uuid.uuid4()) + secure_filename(file.filename)
-            # Dosyanın kaydedileceği tam yolu oluşturuyoruz
             filepath = os.path.join(DogDetec.config['UPLOAD_FOLDER'], filename)
-            # Dosyayı belirtilen konuma kaydediyoruz
             file.save(filepath)
 
-            # Yüklenen videoyu işleyecek bir fonksiyonu ayrı bir thread'de başlatıyoruz
-            threading.Thread(target=process_uploaded_video,
-                             args=(filepath, filename)).start()
+            # Video işleme fonksiyonunu ayrı bir thread'de başlatıyoruz
+            settings = ProcessingSettings()
+            model_settings = ModelSettings()
+            video_processor = VideoProcessor(settings, model_settings)
 
-            # Yükleme başarılı olduktan sonra 'upload' sayfasına yeniden yönlendiriyoruz
+            threading.Thread(target=video_processor.process_video_periodic, args=(filepath, filename)).start()
+
             return redirect(url_for('upload_success'))
     # GET isteği durumunda video yükleme formunu gösteriyoruz
     return render_template('upload.html')
