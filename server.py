@@ -46,7 +46,7 @@ def camera():
 def howto():
     return render_template("howto.html")
 
-# Video yükleme işlemleri için route tanımı (GET ve POST metotlarını kabul eder)
+# Video yükleme işlemleri için route  tanımı (GET ve POST metotlarını kabul eder)
 @DogDetec.route('/upload', methods=['GET', 'POST'])
 def upload_video():
     """
