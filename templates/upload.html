@@ -8,10 +8,10 @@
         <div class="form-container" style="max-width: 600px; margin: 100px auto;">
             <h2 class="text-center mb-4 text-white">MP4 Video Yükleyiniz</h2>
             <p class="text-white mb-4">Aşağıdaki alandan bir .mp4 video dosyası yükleyerek köpek tespitini başlatabilirsiniz. Lütfen yalnızca uygun video formatını kullanın.</p>
-            <form method="POST" action="/upload" enctype="multipart/form-data">
+            <form method="POST" action="{{ url_for('upload_video') }}" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label for="videoFile" class="form-label">Video Dosyası (.mp4)</label>
-                    <input class="form-control" type="file" id="videoFile" name="file" accept=".mp4" required>
+                    <input class="form-control" type="file" id="videoFile" name="video" accept=".mp4" required>
                 </div>
                 <button type="submit" class="btn btn-custom btn-light w-100">Yükle ve İşle</button>
             </form>
