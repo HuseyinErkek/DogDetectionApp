@@ -78,7 +78,7 @@ def upload_video():
     # GET isteği durumunda video yükleme formunu gösteriyoruz
     return render_template('upload.html')
 
-@DogDetec.route('/upload/success')
+@DogDetec.route('/upload_success')
 def upload_success():
     return render_template('upload_succes.html')
 
