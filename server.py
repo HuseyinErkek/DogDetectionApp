@@ -35,17 +35,14 @@ db.init_app(DogDetec)
 
 @DogDetec.route('/')
 def home():
-    return render_template('index.html')
+    return render_template("index.html")
 
-@DogDetec.route('/index.html')
-def index():
-    return render_template('index.html')
 
-@DogDetec.route('/camera.html')
+@DogDetec.route('/camera')
 def camera():
-    return render_template('camera.html')
+    return render_template("camera.html")
 
-@DogDetec.route('/howto.html')
+@DogDetec.route('/howto')
 def howto():
     return render_template("howto.html")
 
@@ -84,10 +81,6 @@ def upload_video():
 @DogDetec.route('/upload/success')
 def upload_success():
     return render_template('upload_succes.html')
-
-
-
-
 
 # Uygulama ilk kez çalıştırıldığında veritabanını oluşturma kontrolü
 if __name__ == '__main__':
