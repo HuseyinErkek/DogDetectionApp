@@ -64,7 +64,7 @@ class VideoProcessor:
                             print("️Kare okunamadı.")
                             break
 
-                        if frame_count % (self.settings.skip_rate + 1) == 0:
+                        if frame_count %  (self.settings.skip_rate + 1) == 0:
                             try:
                                 results = self.model.track(
                                     verbose=False,
