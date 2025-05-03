@@ -50,7 +50,7 @@ def howto():
     return render_template("howto.html")
 
 # Video yükleme işlemleri için route tanımı (GET ve POST metotlarını kabul eder)
-@DogDetec.route('/upload', methods=['GET', 'POST'])
+@DogDetec.route('/upload.html', methods=['GET', 'POST'])
 def upload_video():
     """
     GET isteği: Video yükleme formunu (upload.html) gösterir.

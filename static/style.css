@@ -17,6 +17,15 @@ html, body {
     margin: 0;
     padding: 0;
 }
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main.flex-fill {
+    flex: 1;
+}
 
 
                                                 /*Index.html-CSS*/
