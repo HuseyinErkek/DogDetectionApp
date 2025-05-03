@@ -1,8 +1,9 @@
+import datetime
 import os
 import time
 import threading
 import traceback
-from tabnanny import verbose
+
 
 import cv2
 from ultralytics import YOLO
@@ -27,11 +28,23 @@ class VideoProcessor:
         try:
             cap = cv2.VideoCapture(filepath)
             if not cap.isOpened():
-                print(f"📛 Video açılamadı: {filepath}")
+                print(f" Video açılamadı: {filepath}")
                 return
 
             output_dir = os.path.join(os.getcwd(), 'processed_videos')
             os.makedirs(output_dir, exist_ok=True)
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+            # VideoWriter ayarları
+            frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            fps = int(cap.get(cv2.CAP_PROP_FPS)) or 30
+            output_path = os.path.join(output_dir, filename)
+
+
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+
+            out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
 
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             frame_count = 0
@@ -47,27 +60,26 @@ class VideoProcessor:
                     try:
                         ret, frame = cap.read()
                         if not ret:
-                            print("⚠️ Kare okunamadı.")
+                            print("️Kare okunamadı.")
                             break
 
                         if frame_count % (self.settings.skip_rate + 1) == 0:
                             try:
-                                # Tek bir frame olduğu için stream=False olmalı
                                 results = self.model.track(
-                                    verbose=True,
+                                    verbose=False,
                                     source=frame,
                                     stream=False,
                                     conf=0.5,
                                     iou=0.5,
                                     persist=True,
-                                    save=True,
-                                    project=output_dir,
-                                    name="takip_sonucu",
                                     tracker="botsort.yaml"
                                 )
 
-                                # Generator yerine sonuçları doğrudan döndüğü için for döngüsü kullanılabilir
                                 for result in results:
+                                    # Annotated frame'i al ve yaz
+                                    annotated_frame = result.plot()
+                                    out.write(annotated_frame)
+
                                     if result.boxes.id is not None:
                                         ids = result.boxes.id.cpu().tolist()
                                         classes = result.boxes.cls.cpu().tolist()
@@ -90,34 +102,37 @@ class VideoProcessor:
                                                     thread.start()
                                                     threads.append(thread)
                                             except Exception as e:
-                                                print(f"❌ Nesne işlenirken hata oluştu: {e}")
+                                                print(f" Nesne işlenirken hata oluştu: {e}")
                                                 traceback.print_exc()
                             except Exception as e:
-                                print(f"🚨 YOLO model işlemesi sırasında hata: {e}")
+                                print(f" YOLO model işlemesi sırasında hata: {e}")
                                 traceback.print_exc()
+                        else:
+                            # Atlanan kareler bile olsa boş geçmemek için orijinal frame yaz
+                            out.write(frame)
 
                         frame_count += 1
                     except Exception as e:
-                        print(f"⚠️ Kare işlenirken hata oluştu: {e}")
+                        print(f" Kare işlenirken hata oluştu: {e}")
                         traceback.print_exc()
 
                 for t in threads:
                     try:
                         t.join()
                     except Exception as e:
-                        print(f"⚠️ Thread sonlandırılırken hata: {e}")
+                        print(f"️ Thread sonlandırılırken hata: {e}")
                         traceback.print_exc()
 
                 if frame_count < total_frames:
-                    print(f"⏳ Bekleniyor ({self.settings.wait_duration} sn)...")
+                    print(f" Bekleniyor ({self.settings.wait_duration} sn)...")
                     time.sleep(self.settings.wait_duration)
                     segment_number += 1
                 else:
-                    print("✅ Video işleme tamamlandı.")
+                    print(" Video işleme tamamlandı.")
 
             cap.release()
+            out.release()
 
         except Exception as e:
-            print(f"🚨 Genel hata: {e}")
+            print(f" Genel hata: {e}")
             traceback.print_exc()
-
