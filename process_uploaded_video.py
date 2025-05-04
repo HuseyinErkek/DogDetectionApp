@@ -6,7 +6,6 @@ import traceback
 
 
 import cv2
-import numpy as np
 from ultralytics import YOLO
 from dbmaneger import detect_object
 from settings import ProcessingSettings, ModelSettings
@@ -34,28 +33,28 @@ class VideoProcessor:
 
             output_dir = os.path.join(os.getcwd(), 'processed_videos')
             os.makedirs(output_dir, exist_ok=True)
-            current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-            # VideoWriter ayarları
+            # VideoWriter genel ayarlar
             frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             fps = int(cap.get(cv2.CAP_PROP_FPS)) or 30
             base_filename, ext = os.path.splitext(filename)
-            unique_filename = f"{base_filename}_{current_time}{ext}"
-            output_path = os.path.join(output_dir, unique_filename)
-
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-            out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
 
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             frame_count = 0
-            segment_number = 1
 
             while frame_count < total_frames:
                 segment_start_time = time.time()
                 people_ids = set()
                 dog_ids = set()
                 threads = []
+
+                # Periyot başında yeni zaman damgasıyla dosya oluştur
+                current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                unique_filename = f"{base_filename}_{current_time}{ext}"
+                output_path = os.path.join(output_dir, unique_filename)
+                out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
 
                 while time.time() - segment_start_time < self.settings.work_duration and frame_count < total_frames:
                     try:
@@ -64,7 +63,7 @@ class VideoProcessor:
                             print("️Kare okunamadı.")
                             break
 
-                        if frame_count %  (self.settings.skip_rate + 1) == 0:
+                        if frame_count % (self.settings.skip_rate + 1) == 0:
                             try:
                                 results = self.model.track(
                                     verbose=False,
@@ -77,7 +76,6 @@ class VideoProcessor:
                                 )
 
                                 for result in results:
-                                    # Annotated frame'i al ve yaz
                                     annotated_frame = result.plot()
                                     out.write(annotated_frame)
 
@@ -109,7 +107,6 @@ class VideoProcessor:
                                 print(f" YOLO model işlemesi sırasında hata: {e}")
                                 traceback.print_exc()
                         else:
-                            # Atlanan kareler bile olsa boş geçmemek için orijinal frame yaz
                             out.write(frame)
 
                         frame_count += 1
@@ -124,15 +121,15 @@ class VideoProcessor:
                         print(f"️ Thread sonlandırılırken hata: {e}")
                         traceback.print_exc()
 
+                out.release()
+
                 if frame_count < total_frames:
                     print(f" Bekleniyor ({self.settings.wait_duration} sn)...")
                     time.sleep(self.settings.wait_duration)
-                    segment_number += 1
                 else:
                     print(" Video işleme tamamlandı.")
 
             cap.release()
-            out.release()
 
         except Exception as e:
             print(f" Genel hata: {e}")
