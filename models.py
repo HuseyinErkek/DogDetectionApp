@@ -1,9 +1,8 @@
 # models.py
 from datetime import datetime
-
+from app_init import db
 from flask_sqlalchemy import SQLAlchemy
 
-db = SQLAlchemy()
 
 class Cameras(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
