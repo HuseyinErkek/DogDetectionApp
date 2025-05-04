@@ -2,35 +2,17 @@
 import os
 import threading
 import uuid
-
-
-
-# Flask ve ilgili araçları içe aktarıyoruz
 from flask import Flask, render_template, request, redirect, url_for
 from werkzeug.utils import secure_filename
 
-# Veritabanı modellerini içeren 'models.py' dosyasını içe aktarıyoruz
-from models import db
+from app_init import DogDetec,db,DB_NAME,UPLOAD_FOLDER
 from process_uploaded_video import VideoProcessor
 from settings import ProcessingSettings, ModelSettings
 
+
 # Yüklenen videolar için klasörü oluşturuyoruz (eğer yoksa)
-UPLOAD_FOLDER = 'uploads'
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Veritabanı dosyasının adını tanımlıyoruz
-DB_NAME = "dogdetection.db"
-
-# Flask uygulamasını başlatıyoruz
-DogDetec = Flask(__name__)
-
-# Flask uygulamasının yapılandırmasını ayarlıyoruz
-DogDetec.config['SECRET_KEY'] = '1234asd'  # Uygulama için gizli anahtar
-DogDetec.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'  # Veritabanı bağlantı URI'si
-DogDetec.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# SQLAlchemy kütüphanesini Flask uygulamasına bağlıyoruz
-db.init_app(DogDetec)
 
 
 @DogDetec.route('/')
@@ -94,5 +76,5 @@ if __name__ == '__main__':
         print("Veritabanı zaten mevcut.")
 
     # Flask uygulamasını geliştirme modunda (debug=True) çalıştırıyoruz
-    DogDetec.debug = True
+    DogDetec.debug = False
     DogDetec.run() # Tüm ağlardan erişilebilir hale getiriyoruz (isteğe bağlı)
