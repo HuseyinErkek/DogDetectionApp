@@ -4,13 +4,10 @@ import time
 import threading
 import traceback
 
-
 import cv2
 from ultralytics import YOLO
 from dbmaneger import detect_object
 from settings import ProcessingSettings, ModelSettings
-
-
 
 
 class VideoProcessor:
@@ -34,7 +31,6 @@ class VideoProcessor:
             output_dir = os.path.join(os.getcwd(), 'processed_videos')
             os.makedirs(output_dir, exist_ok=True)
 
-            # VideoWriter genel ayarlar
             frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             fps = int(cap.get(cv2.CAP_PROP_FPS)) or 30
@@ -45,18 +41,22 @@ class VideoProcessor:
             frame_count = 0
 
             while frame_count < total_frames:
+                print("Video İşlenmeye Başlandı")
                 segment_start_time = time.time()
                 people_ids = set()
                 dog_ids = set()
                 threads = []
 
-                # Periyot başında yeni zaman damgasıyla dosya oluştur
                 current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                 unique_filename = f"{base_filename}_{current_time}{ext}"
                 output_path = os.path.join(output_dir, unique_filename)
                 out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
 
-                while time.time() - segment_start_time < self.settings.work_duration and frame_count < total_frames:
+                # Kare sayısı bazında süre kontrolü
+                segment_frame_limit = int(self.settings.work_duration * fps)
+                segment_frame_counter = 0
+
+                while segment_frame_counter < segment_frame_limit and frame_count < total_frames:
                     try:
                         ret, frame = cap.read()
                         if not ret:
@@ -64,7 +64,6 @@ class VideoProcessor:
                             break
 
                         if frame_count % (self.settings.skip_rate + 1) == 0:
-                            print("Video İşleme Başlıyor")
                             try:
                                 results = self.model.track(
                                     verbose=False,
@@ -111,6 +110,7 @@ class VideoProcessor:
                             out.write(frame)
 
                         frame_count += 1
+                        segment_frame_counter += 1
                     except Exception as e:
                         print(f" Kare işlenirken hata oluştu: {e}")
                         traceback.print_exc()
@@ -124,13 +124,15 @@ class VideoProcessor:
 
                 out.release()
 
+                # 2 dakikalık video içeriğini atla
                 if frame_count < total_frames:
+                    print(f"Video({self.settings.wait_duration})")
                     print(f" Bekleniyor ({self.settings.wait_duration} sn)...")
-                    # 2 dakikaya denk gelen kare sayısını atla
+
                     skip_frames = int(fps * self.settings.wait_duration)
                     frame_count += skip_frames
                     cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count)
-                    print("Video 2dkya denk gelen kare sayısı kadar atladı.")
+
                     time.sleep(self.settings.wait_duration)
                 else:
                     print(" Video işleme tamamlandı.")
