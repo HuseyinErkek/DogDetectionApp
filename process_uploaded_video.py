@@ -64,6 +64,7 @@ class VideoProcessor:
                             break
 
                         if frame_count % (self.settings.skip_rate + 1) == 0:
+                            print("Video İşleme Başlıyor")
                             try:
                                 results = self.model.track(
                                     verbose=False,
@@ -125,6 +126,11 @@ class VideoProcessor:
 
                 if frame_count < total_frames:
                     print(f" Bekleniyor ({self.settings.wait_duration} sn)...")
+                    # 2 dakikaya denk gelen kare sayısını atla
+                    skip_frames = int(fps * self.settings.wait_duration)
+                    frame_count += skip_frames
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count)
+                    print("Video 2dkya denk gelen kare sayısı kadar atladı.")
                     time.sleep(self.settings.wait_duration)
                 else:
                     print(" Video işleme tamamlandı.")
