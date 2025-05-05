@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container mt-5">
-  <h2 class="mb-4 text-success">Video Başarıyla Yüklendi ve İşlendi</h2>
+  <h2 class="mb-4 text-white">Video Başarıyla Yüklendi ve İşlendi</h2>
 
   <div class="mb-4">
     <video controls width="100%" height="auto">
@@ -13,6 +13,6 @@
     </video>
   </div>
 
-  <a href="{{ url_for('upload_video') }}" class="btn btn-primary">Yeni Video Yükle</a>
+  <a href="{{ url_for('upload_video') }}" class="btn btn-light">Yeni Video Yükle</a>
 </div>
 {% endblock %}
