@@ -2,18 +2,14 @@
 import os
 import threading
 import uuid
-from flask import Flask, render_template, request, redirect, url_for
+from flask import render_template, request, redirect, url_for
+from flask_socketio import emit
+
 from werkzeug.utils import secure_filename
 
-from app_init import DogDetec,db,DB_NAME,UPLOAD_FOLDER
+from app_init import DogDetec, DB_NAME, UPLOAD_FOLDER, socketio,create_database
 from process_uploaded_video import VideoProcessor
 from settings import ProcessingSettings, ModelSettings
-
-
-# Yüklenen videolar için klasörü oluşturuyoruz (eğer yoksa)
-
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
 
 @DogDetec.route('/')
 def home():
@@ -82,7 +78,6 @@ def upload_video():
 @DogDetec.route('/upload_success')
 def upload_success():
     return render_template('upload_succes.html')
-
 
 # Uygulama ilk kez çalıştırıldığında veritabanını oluşturma kontrolü
 if __name__ == '__main__':

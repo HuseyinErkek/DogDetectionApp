@@ -1,0 +1,64 @@
+{% extends 'base.html' %}  {# Bu şablonun 'base.html'den miras aldığını belirtir #}
+
+{% block title %} İşleme Sırası {% endblock %}  {# Sayfa başlığını tanımlar #}
+
+{% block content %}  {# Sayfa içeriğini tanımlar #}
+    <h3 class="text-white">İşlem Durumu</h3>  {# Başlık #}
+
+
+    <div class="text-white">
+     <progress  {# İlerleme çubuğu #}
+        id="progressBar"
+        value="0"  {# Başlangıç değeri 0 #}
+        max="100"  {# Maksimum değer 100 #}
+        style="width: 300px;"  {# Stil tanımlaması (genişlik) #}>
+     </progress>
+        <span id="progressPercent" style="margin-left: 10px;">%0</span>
+    </div>
+
+    <div id="progressText" class="text-white">Henüz bir işlem yok</div>  {# İlerleme metni için bir div #}
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>  {# SocketIO kütüphanesini yükler #}
+
+    <script>
+        const socket = io('http://127.0.0.1:5000');  {# SocketIO bağlantısını kurar (sunucu adresi) #}
+
+        socket.on('server_message', function (data) {  {# 'server_message' olayını dinler #}
+            console.log('Sunucudan gelen mesaj:', data.message);  {# Konsola mesajı yazdırır #}
+            document.getElementById('messages').innerHTML += `<p>${data.message}</p>`;  {# Mesajı sayfadaki 'messages' div'ine ekler #}
+        });
+
+          socket.on('progress', function(data) {
+            console.log("İlerleme verisi:", data.progress, "Dosya Adı:", data.filename);
+
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('progressPercent');
+            const progressText = document.getElementById('progressText');
+
+            progressBar.value = data.progress;
+            progressPercent.textContent = `%${data.progress.toFixed(2)}`;
+
+            if(data.filename){
+                progressText.textContent = `İşlemdeki Dosya: ${data.filename}`;
+            } else {
+                progressText.textContent = "Henüz bir işlem yok";
+            }
+
+            // Renk değişimi
+            if (data.progress < 50) {
+                progressBar.style.backgroundColor = "red";
+            } else if (data.progress < 80) {
+                progressBar.style.backgroundColor = "yellow";
+            } else {
+                progressBar.style.backgroundColor = "green";
+            }
+        });
+
+        socket.on('server_close_message', function (data) {  {# 'server_close_message' olayını dinler #}
+            console.log('Sunucudan gelen mesaj:', data.message);  {# Konsola mesajı yazdırır #}
+            document.getElementById('messages').innerHTML += `<p>${data.message}</p>`;  {# Mesajı sayfadaki 'messages' div'ine ekler #}
+        });
+
+
+    </script>
+{% endblock content %}
