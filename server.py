@@ -16,9 +16,28 @@ def home():
     return render_template("index.html")
 
 
-@DogDetec.route('/camera')
-def camera():
-    return render_template("camera.html")
+@DogDetec.route('/city/<city_name>')
+def city_cameras(city_name):
+    cities = {
+        "bursa": [
+            {"name": "Osmangazi", "image_url": "/static/images/osmangazi.jpg"},
+            {"name": "Nilüfer", "image_url": "/static/images/nilufer.jpg"},
+            {"name": "Yıldırım", "image_url": "/static/images/yildirim.jpg"}
+        ],
+        "izmir": [
+            {"name": "Konak", "image_url": "/static/images/konak.jpg"},
+            {"name": "Bornova", "image_url": "/static/images/bornova.jpg"},
+            {"name": "Karşıyaka", "image_url": "/static/images/karsiyaka.jpg"}
+        ],
+        "istanbul": [
+            {"name": "Kadıköy", "image_url": "/static/images/kadikoy.jpg"},
+            {"name": "Beşiktaş", "image_url": "/static/images/besiktas.jpg"},
+            {"name": "Üsküdar", "image_url": "/static/images/uskudar.jpg"}
+        ]
+    }
+
+    districts = cities.get(city_name.lower(), [])
+    return render_template("camera.html", city_name=city_name, districts=districts)
 
 @DogDetec.route('/howto')
 def howto():
