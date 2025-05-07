@@ -67,43 +67,29 @@ def upload_video():
             # Video işleme fonksiyonunu ayrı bir thread'de başlatıyoruz
             settings = ProcessingSettings()
             model_settings = ModelSettings()
-            video_processor = VideoProcessor(settings, model_settings,socketio)
+            video_processor = VideoProcessor(settings, model_settings)
+
             threading.Thread(target=video_processor.process_video_periodic, args=(filepath, filename)).start()
-            #Video işleniyor sayfasına gönderiyoruz.
-            return redirect(url_for('processing'))
+
+            return redirect(url_for('upload_success'))
     # GET isteği durumunda video yükleme formunu gösteriyoruz
     return render_template('upload.html')
-
-
-@DogDetec.route('/processing')
-def processing():
-    return render_template('processing.html')
 
 @DogDetec.route('/upload_success')
 def upload_success():
     return render_template('upload_succes.html')
 
-@socketio.on('connect')
-def handle_connect():
-    print("Web socket baglandi")
-    emit('server_message', {'message': 'Soket bağlandı!!!'})
-
-# WebSocket bağlantısı kesildiğinde çalışacak fonksiyon
-@socketio.on('disconnect')
-def handle_disconnect():
-    print("WebSocket bağlantısı kesildi")
-
-@socketio.on('progress')
-def handle_progress(data):
-    print("Web soket progress icin kisim acildi")
-    emit('progress', data)
-
+# Uygulama ilk kez çalıştırıldığında veritabanını oluşturma kontrolü
 if __name__ == '__main__':
-    # Veritabanı dosyasının varlığını kontrol ederek gerekirse oluşturuyoruz
+    # Veritabanı dosyasının var olup olmadığını kontrol ediyoruz
     if not os.path.exists(DB_NAME):
-        create_database()
+        # Flask uygulama bağlamı içinde veritabanını oluşturuyoruz
+        with DogDetec.app_context():
+            db.create_all()
+        print("Veritabanı oluşturuldu.")
     else:
         print("Veritabanı zaten mevcut.")
 
-    # SocketIO ile Flask uygulamasını başlatıyoruz
-    socketio.run(DogDetec,debug=True,allow_unsafe_werkzeug=True)
+    # Flask uygulamasını geliştirme modunda (debug=True) çalıştırıyoruz
+    DogDetec.debug = False
+    DogDetec.run() # Tüm ağlardan erişilebilir hale getiriyoruz (isteğe bağlı)

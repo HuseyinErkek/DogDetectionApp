@@ -1,3 +1,5 @@
 /uploads/
 /processed_videos/
 /instance/dogdetection.db
+/.idea/misc.xml
+/.idea/DogDetectionApp.iml
