@@ -1,21 +1,24 @@
 {% extends 'base.html' %}
-{% block title %}Şehir Kameraları{% endblock %}
+{% block title %}{{ city_name | capitalize }} İlçeleri{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h2 class="text-white text-center my-4">Şehir Kameraları</h2>
+    <h2 class="text-white text-center my-4">{{ city_name | capitalize }} İlçeleri</h2>
     <div class="row justify-content-center">
 
         {% for i in range(3) %}
         <div class="col-md-4 mb-4">
-            <div class="card h-100 text-center shadow">
-                <img src="{{ districts[i].image_url if districts and i < districts|length else '/static/images/kamera.jpg' }}" class="card-img-top" alt="Kamera">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        {{ districts[i].name if districts and i < districts|length else '' }}
-                    </h5>
+            <a href="#" class="text-decoration-none">
+                <div class="card h-100 text-center shadow camera-card">
+                    <img src="{{ districts[i].image_url if districts and i < districts|length else '' }}"
+                         class="card-img-top" alt="Kamera">
+                    <div class="card-body">
+                        <h5 class="card-title text-dark">
+                            {{ districts[i].name if districts and i < districts|length else '' }}
+                        </h5>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         {% endfor %}
 
