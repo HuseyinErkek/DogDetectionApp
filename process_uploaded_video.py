@@ -5,7 +5,7 @@ import threading
 import traceback
 import cv2
 from ultralytics import YOLO
-from dbmaneger import detect_object  # Gerçek dosya yolunuza göre düzenleyin
+from dbmaneger import detect_object
 from settings import ProcessingSettings, ModelSettings
 from flask_socketio import SocketIO
 
@@ -34,16 +34,29 @@ class VideoProcessor:
             self.socketio.emit('error', {'message': error_message})
             return None
 
-    def emit_progress(self, progress, filename):
-        print(f"İşleniyor: %{progress:.2f} - {filename}")
-        data = {'filename': filename, 'progress': progress}
-        self.socketio.emit('progress', data)
+    def emit_filename_initial(self, filename, session_id):
+        print(f"Yeni segment başlatıldı: {filename}")
+        self.socketio.emit('segment_started', {'filename': filename}, to=session_id)
 
-    def process_video_periodic(self, filepath: str, filename: str):
-        global unique_filename
+    def emit_progress_update(self, progress, session_id):
+        self.socketio.emit('progress', {'progress': progress}, to=session_id)
+
+    def emit_segment_progress_update(self,segment_progress, session_id):
+        self.socketio.emit('segment_progress', {
+            'segment_progress': segment_progress
+        }, to=session_id)
+
+    def emit_wait_countdown(self, seconds, session_id):
+        for remaining in range(seconds, 0, -1):
+            self.socketio.emit('wait_timer', {'remaining_seconds': remaining}, to=session_id)
+            time.sleep(1)
+
+    def emit_error(self, message, session_id):
+        self.socketio.emit('error', {'message': message}, to=session_id)
+
+    def process_video_periodic(self, filepath: str, filename: str, session_id: str):
         if self.model is None:
             print("Model yüklenemedi, video işleme durduruldu.")
-            self.socketio.emit('error', {'message': 'Model yüklenemedi'})
             return
 
         cap = None
@@ -54,7 +67,6 @@ class VideoProcessor:
             if not cap.isOpened():
                 error_message = f"Video açılamadı: {filepath}"
                 print(error_message)
-                self.socketio.emit('error', {'message': error_message})
                 return
 
             output_dir = os.path.join(os.getcwd(), 'processed_videos')
@@ -65,9 +77,11 @@ class VideoProcessor:
             fps = int(cap.get(cv2.CAP_PROP_FPS)) or 30
             base_filename, ext = os.path.splitext(filename)
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             frame_count = 0
 
+            #Video geneli icin olan dongu
             while frame_count < total_frames:
                 print("Video İşlenmeye Başlandı")
                 people_ids = set()
@@ -79,12 +93,15 @@ class VideoProcessor:
                 output_path = os.path.join(output_dir, unique_filename)
                 out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
 
+                self.emit_filename_initial(unique_filename, session_id)
+
                 segment_frame_limit = int(self.settings.work_duration * fps)
                 segment_frame_counter = 0
 
                 progress = calculate_progress(frame_count, total_frames)
-                self.emit_progress(progress, filename)
+                self.emit_progress_update(progress, session_id)
 
+                #Segmentler icin olan dongu
                 while segment_frame_counter < segment_frame_limit and frame_count < total_frames:
                     try:
                         ret, frame = cap.read()
@@ -132,14 +149,17 @@ class VideoProcessor:
                                 error_message = f"YOLO model hatası: {e}"
                                 print(error_message)
                                 traceback.print_exc()
-                                self.socketio.emit('error', {'message': error_message})
                         else:
                             out.write(frame)
 
                         frame_count += 1
                         segment_frame_counter += 1
                         progress = calculate_progress(frame_count, total_frames)
-                        self.emit_progress(progress, unique_filename)
+                        self.emit_progress_update(progress, session_id)
+                        segment_progress = calculate_progress(segment_frame_counter,segment_frame_limit)
+                        self.emit_segment_progress_update(segment_progress, session_id)
+
+
 
                     except Exception as e:
                         error_message = f"Kare işleme hatası: {e}"
@@ -155,23 +175,26 @@ class VideoProcessor:
                         print(error_message)
                         traceback.print_exc()
 
+
+                print("Segment Bitti")
+                self.emit_segment_progress_update(100, session_id)
+
                 out.release()
                 out = None
 
                 if frame_count < total_frames:
                     print(f" Bekleniyor ({self.settings.wait_duration} sn)...")
+                    self.emit_wait_countdown(self.settings.wait_duration, session_id)
                     time.sleep(self.settings.wait_duration)
                     skip_frames = int(fps * self.settings.wait_duration)
                     frame_count += skip_frames
                     cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count)
                 else:
                     print("Video işleme tamamlandı.")
-                    progress = 100
-                    self.emit_progress(progress, unique_filename)
+                    self.emit_progress_update(100, session_id)
 
             cap.release()
             cap = None
-            self.emit_progress(100, unique_filename)
 
         except Exception as e:
             error_message = f"Video işleme genel hata: {e}"
