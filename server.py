@@ -1,13 +1,15 @@
 import os
 import threading
 import uuid
-from flask import render_template, request, redirect, url_for
-from flask_socketio import emit
+
+from flask import render_template, request, redirect, url_for, session
+from flask_socketio import leave_room, emit, join_room
 from werkzeug.utils import secure_filename
 
-from app_init import DogDetec, DB_NAME, UPLOAD_FOLDER, socketio, create_database, db
+from app_init import DogDetec, DB_NAME, socketio, db
 from process_uploaded_video import VideoProcessor
 from settings import ProcessingSettings, ModelSettings
+
 
 @DogDetec.route('/')
 def home():
@@ -62,7 +64,8 @@ def upload_video():
             settings = ProcessingSettings()
             model_settings = ModelSettings()
             video_processor = VideoProcessor(settings, model_settings, socketio)
-            threading.Thread(target=video_processor.process_video_periodic, args=(filepath, filename)).start()
+            session_id= request.sid
+            threading.Thread(target=video_processor.process_video_periodic, args=(filepath, filename,session_id)).start()
 
             return redirect(url_for('processing'))
     return render_template('upload.html')
@@ -75,19 +78,57 @@ def processing():
 def upload_success():
     return render_template('upload_succes.html')
 
+
 @socketio.on('connect')
 def handle_connect():
-    print("Web socket baglandi")
-    emit('server_message', {'message': 'Soket bağlandı!!!'})
+    session_id = request.sid
+    print(f"Yeni bağlantı: {session_id}")
+    emit('session_id', {'sessionId': session_id})
+
+@socketio.on('join_room')
+def handle_join(data):
+    session_id = data.get('sessionId')
+    if session_id:
+        join_room(session_id)
+
+@socketio.on('progress')
+def handle_progress(data):
+    session_id = data.get('sessionId')
+    progress = data.get('progress')
+
+    if session_id and progress is not None:
+        emit('progress', {'progress': progress}, room=session_id)
+    else:
+        print("Hata: Geçersiz sessionId veya progress")
+
+@socketio.on('segment_progress')
+def handle_segment_progress(data):
+    session_id = data.get('sessionId')
+    segment_progress = data.get('segment_progress')
+
+    if session_id and segment_progress is not None:
+        emit('segment_progress',{'segment_progress':segment_progress}, room=session_id)
+    else:
+        print("Hata: Geçersiz sessionId veya segment_progress")
+
+@socketio.on('wait_timer')
+def handle_wait_timer(data):
+    session_id = data.get('sessionId')
+    remaining_seconds = data.get('remaining_seconds') # Kalan süreyi al
+    emit('wait_timer', {'remaining_seconds': remaining_seconds}, room=session_id) # Kalan süreyi gönder
+
+
+@socketio.on('leave_room')
+def handle_leave(data):
+    session_id = data.get('sessionId')
+    if session_id:
+        leave_room(session_id)
+        print(f"{session_id} odasından çıkıldı.")
+
 
 @socketio.on('disconnect')
 def handle_disconnect():
     print("WebSocket bağlantısı kesildi")
-
-@socketio.on('progress')
-def handle_progress(data):
-    print("Web soket progress icin kisim acildi")
-    emit('progress', data)
 
 if __name__ == '__main__':
     if not os.path.exists(DB_NAME):
