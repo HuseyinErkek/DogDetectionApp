@@ -4,6 +4,7 @@ let sessionId = null;
 
 socket.on('connect', () => {
     console.log('Sunucuya bağlanıldı.');
+     console.log("Socket bağlı:", socket.id); // Bu da request.sid ile eşleşir
     segmentList.innerHTML = '';
     const testItem = document.createElement('li');
     testItem.innerText = 'Bağlantı Kuruldu!';
@@ -14,7 +15,13 @@ socket.on('connect', () => {
 socket.on('session_id', (data) => {
     sessionId = data.sessionId;
     console.log('Sunucudan alınan sessionId:', sessionId);
-    socket.emit('join_room', { sessionId });
+
+    const input = document.getElementById('sessionIdInput');
+    if (input) {
+        input.value = sessionId;
+    } else {
+        console.warn('Hidden input sessionIdInput bulunamadı.');
+    }
 });
 
 

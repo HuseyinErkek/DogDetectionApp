@@ -64,7 +64,7 @@ def upload_video():
             settings = ProcessingSettings()
             model_settings = ModelSettings()
             video_processor = VideoProcessor(settings, model_settings, socketio)
-            session_id= request.form.get("session_id")
+            session_id= request.form.get("sessionIdInput")
             threading.Thread(target=video_processor.process_video_periodic, args=(filepath, filename, session_id)).start() # request.sid kullanın
 
             return redirect(url_for('processing'))
@@ -78,49 +78,45 @@ def processing():
 def upload_success():
     return render_template('upload_succes.html')
 
+connected_clients = {}
 
 @socketio.on('connect')
 def handle_connect():
     session_id = request.sid
+    connected_clients[session_id] = True
     print(f"Yeni bağlantı: {session_id}")
     emit('session_id', {'sessionId': session_id})
     join_room(session_id) # Bağlanır bağlanmaz odaya al
 
-@socketio.on('join_room')
-def handle_join(data):
-    session_id = data.get('sessionId')
-    if session_id:
-        join_room(session_id) # İstemci de join isteği gönderiyor, tekrar katıl
-        print(f"İstemci {session_id} odasına katıldı.")
 
 @socketio.on('progress')
 def handle_progress(data):
     session_id = data.get('sessionId')
     progress = data.get('progress')
 
-    if session_id and progress is not None:
-        emit('progress', {'progress': progress, 'sessionId': session_id}, to=session_id)
+    if progress is not None:
+        emit('progress', {'progress': progress}, to=session_id)
     else:
-        print("Hata: Geçersiz sessionId veya progress")
+        print(f"Hata (progress): Geçersiz progress değeri - {session_id}")
 
 @socketio.on('segment_progress')
 def handle_segment_progress(data):
     session_id = data.get('sessionId')
     segment_progress = data.get('segment_progress')
 
-    if session_id and segment_progress is not None:
-        emit('segment_progress',{'segment_progress':segment_progress, 'sessionId': session_id}, to=session_id)
+    if segment_progress is not None:
+        emit('segment_progress', {'segment_progress': segment_progress}, to=session_id)
     else:
-        print("Hata: Geçersiz sessionId veya segment_progress")
+        print(f"Hata (segment): Geçersiz segment_progress değeri - {session_id}")
 
 @socketio.on('wait_timer')
 def handle_wait_timer(data):
     session_id = data.get('sessionId')
     remaining_seconds = data.get('remaining_seconds') # Kalan süreyi al
-    if session_id and remaining_seconds is not None:
-        emit('wait_timer', {'remaining_seconds': remaining_seconds, 'sessionId': session_id}, to=session_id) # Kalan süreyi gönder
+    if remaining_seconds is not None:
+        emit('wait_timer', {'remaining_seconds': remaining_seconds}, to=session_id)
     else:
-        print("Hata: Geçersiz sessionId veya remaining_seconds")
+        print(f"Hata (timer): Geçersiz remaining_seconds değeri - {session_id}")
 
 
 @socketio.on('leave_room')
@@ -134,6 +130,8 @@ def handle_leave(data):
 @socketio.on('disconnect')
 def handle_disconnect():
     session_id = request.sid
+    if session_id in connected_clients:
+        del connected_clients[session_id]
     print(f"WebSocket bağlantısı kesildi: {session_id}")
     leave_room(session_id) # Bağlantı kesilince odadan çık
 
