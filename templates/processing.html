@@ -3,56 +3,44 @@
 {% block title %} İşleme Sırası {% endblock %}
 
 {% block content %}
-    <div class="container mt-5">
-        <h3 class="text-white mb-3">Video İşleme Durumu</h3>
+<div class="container mt-5">
+    <h3 class="text-white mb-3">Video İşleme Durumu</h3>
 
-        <div class="text-white mb-3">
-            <span>Toplam İlerleme:</span>
-            <progress
-                id="progressBar"
-                value="0"
-                max="100"
-                style="width: 100%; height: 20px;"
-                class="mb-2">
-            </progress>
-            <span id="progressPercent">%0</span>
-        </div>
-
-        <h4 class="text-white mb-3">Segment İşleme Durumu</h4>
-        <div class="text-white mb-3">
-            <span>Mevcut Segment İlerlemesi:</span>
-            <progress
-                id="segmentProgressBar"
-                value="0"
-                max="100"
-                style="width: 100%; height: 20px;"
-                class="mb-2">
-            </progress>
-            <span id="segmentProgressPercent">%0</span>
-        </div>
-
-        <h2 class="text-white mb-3">Lütfen Bekleyiniz...</h2>
-        <div id="countdown" class="text-white mb-3"></div>
-
-        <h4 class="text-white mb-3">İşlenen Segmentler</h4>
-        <ul id="segmentList" class="list-group text-white">
-            {# İşlenen segmentler JavaScript ile buraya eklenecek #}
-        </ul>
-
-        <div id="messages" class="mt-4 text-white">
-            <h4>Sunucu Mesajları</h4>
-            {# Sunucu mesajları JavaScript ile buraya eklenecek #}
-        </div>
-
-        <div id="error-message" class="mt-4 alert alert-danger text-center" style="display: none;">
-            {# Hata mesajları JavaScript ile buraya eklenecek ve gösterilecek #}
-        </div>
-
-        <div id="success-message" class="mt-4 alert alert-success text-center" style="display: none;">
-            {# Başarı mesajları (isteğe bağlı) JavaScript ile buraya eklenecek ve gösterilecek #}
-        </div>
+    <div class="text-white mb-3">
+        <span>Toplam İlerleme:</span>
+        <progress id="progressBar" value="0" max="100" style="width: 100%; height: 20px;" class="mb-2"></progress>
+        <span id="progressPercent">%0</span>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
-    <script src="{{ url_for('static', filename='client.js') }}"></script>
+    <h4 class="text-white mb-3">Segment İşleme Durumu</h4>
+    <div class="text-white mb-3">
+        <span>Mevcut Segment İlerlemesi:</span>
+        <progress id="segmentProgressBar" value="0" max="100" style="width: 100%; height: 20px;" class="mb-2"></progress>
+        <span id="segmentProgressPercent">%0</span>
+    </div>
+
+    <h2 class="text-white mb-3">Lütfen Bekleyiniz...</h2>
+    <div id="countdown" class="text-white mb-3"></div>
+
+    <h4 class="text-white mb-3">İşlenen Segmentler</h4>
+    <ul id="segmentList" class="list-group text-white">
+        {# Segmentler JS ile buraya eklenecek #}
+    </ul>
+
+    <div id="messages" class="mt-4 text-white">
+        <h4>Sunucu Mesajları</h4>
+        {# JS ile eklenecek #}
+    </div>
+
+    <div id="error-message" class="mt-4 alert alert-danger text-center" style="display: none;">
+        {# JS ile gösterilecek hata mesajı #}
+    </div>
+
+    <div id="success-message" class="mt-4 alert alert-success text-center" style="display: none;">
+        {# JS ile gösterilecek başarı mesajı #}
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='client.js') }}"></script>
 {% endblock content %}
