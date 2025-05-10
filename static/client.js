@@ -4,38 +4,31 @@ let sessionId = null;
 
 socket.on('connect', () => {
     console.log('Sunucuya bağlanıldı.');
-    const sessionId = socket.id;
-    socket.emit('join_room', { sessionId: sessionId });
-    segmentList.innerHTML = ''; // Temizle
+    segmentList.innerHTML = '';
     const testItem = document.createElement('li');
     testItem.innerText = 'Bağlantı Kuruldu!';
+    testItem.classList.add('list-group-item', 'bg-dark', 'text-white');
     segmentList.appendChild(testItem);
 });
 
-// Sunucudan sessionId alınması
 socket.on('session_id', (data) => {
     sessionId = data.sessionId;
     console.log('Sunucudan alınan sessionId:', sessionId);
-    // SessionId alındıktan sonra odaya katıl
-    socket.emit('join_room', { sessionId: sessionId });
-    segmentList.innerHTML = '';
+    socket.emit('join_room', { sessionId });
 });
 
-// Yeni segment başladığında tetiklenir
+
 socket.on('segment_started', (data) => {
     const { filename } = data;
     console.log('Yeni segment adı:', filename);
 
-    // Bir listeye ekle
-    const list = document.getElementById('segmentList');
     const li = document.createElement('li');
     li.innerText = `İşlenen Segment: ${filename}`;
-    list.appendChild(li);
+    li.classList.add('list-group-item', 'bg-dark', 'text-white');
+    segmentList.appendChild(li);
 });
 
-socket.on('progress', function(data) {
-
-
+socket.on('progress', (data) => {
     const progressBar = document.getElementById('progressBar');
     const progressPercent = document.getElementById('progressPercent');
 
@@ -55,8 +48,7 @@ socket.on('progress', function(data) {
     }
 });
 
-
-socket.on('segment_progress', function(data) {
+socket.on('segment_progress', (data) => {
     const segmentProgressBar = document.getElementById('segmentProgressBar');
     const segmentProgressPercent = document.getElementById('segmentProgressPercent');
 
@@ -76,7 +68,7 @@ socket.on('segment_progress', function(data) {
     }
 });
 
-socket.on('wait_timer', function(data) {
+socket.on('wait_timer', (data) => {
     const countdownDiv = document.getElementById('countdown');
     if (data && data.remaining_seconds !== undefined) {
         countdownDiv.textContent = `Kalan Süre: ${data.remaining_seconds} saniye`;
@@ -85,12 +77,13 @@ socket.on('wait_timer', function(data) {
     }
 });
 
-// Hata mesajı alındığında
 socket.on('error', (data) => {
-    alert('Hata: ' + data.message);
+    const errorMessage = document.getElementById('error-message');
+    errorMessage.textContent = 'Hata: ' + data.message;
+    errorMessage.style.display = 'block';
 });
 
-socket.on('server_close_message', function (data) {
-    console.log('Sunucudan gelen mesaj:', data.message);
-    document.getElementById('messages').innerHTML += `<p>${data.message}</p>`;
+socket.on('server_close_message', (data) => {
+    const messagesDiv = document.getElementById('messages');
+    messagesDiv.innerHTML += `<p>${data.message}</p>`;
 });
