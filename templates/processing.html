@@ -4,10 +4,17 @@
 
 {% block content %}
 <div class="container mt-5">
-    <!-- Ana Başlık -->
-    <h2 class="text-white mb-4">
-        <i class="bi bi-gear-wide-connected"></i> Video İşleme Durumu
-    </h2>
+    <!-- Ana Başlık ve Session ID -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-white mb-0">
+            <i class="bi bi-gear-wide-connected"></i> Video İşleme Durumu
+        </h2>
+        <div id="sessionInfo" class="alert alert-info py-1 mb-0" style="display: none;">
+            <i class="bi bi-person-badge me-1"></i>
+            <span>Oturum: </span>
+            <strong id="sessionIdDisplay" class="font-monospace"></strong>
+        </div>
+    </div>
 
     <!-- Ana İlerleme Çubuğu -->
     <div class="card bg-dark text-white mb-4">
@@ -29,26 +36,52 @@
         </div>
     </div>
 
-    <!-- Segment İlerleme -->
-    <div class="card bg-dark text-white mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">
-                <i class="bi bi-film"></i> Aktif Segment
-                <span id="segmentProgressPercent" class="float-end">%0</span>
-            </h5>
-        </div>
-        <div class="card-body">
-            <div class="progress" style="height: 20px;">
-                <div id="segmentProgressBar" class="progress-bar"
-                     role="progressbar" style="width: 0%">
+    <!-- Segment Bilgileri -->
+    <div class="row">
+        <!-- Aktif Segment -->
+        <div class="col-md-6 mb-4">
+            <div class="card bg-dark text-white h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-film"></i> Aktif Segment
+                        <span id="segmentProgressPercent" class="float-end">%0</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="progress" style="height: 20px;">
+                        <div id="segmentProgressBar" class="progress-bar"
+                             role="progressbar" style="width: 0%">
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <small id="segmentName" class="text-muted d-block">Segment hazırlanıyor...</small>
+                        <small id="segmentTime" class="text-muted d-block"></small>
+                    </div>
                 </div>
             </div>
-            <small id="segmentName" class="text-muted mt-2 d-block">Segment hazırlanıyor...</small>
+        </div>
+
+        <!-- İşlenen Segmentler -->
+        <div class="col-md-6 mb-4">
+            <div class="card bg-dark text-white h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-check"></i> İşlenen Segmentler
+                        <span id="processedCount" class="badge bg-secondary float-end">0</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="segmentList" class="list-group list-group-flush" style="max-height: 150px; overflow-y: auto;">
+                        <div class="list-group-item bg-secondary text-center py-3">
+                            <i class="bi bi-hourglass"></i> Henüz işlenmiş segment yok
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-
-    <!-- İşlem Tamamlandı Butonu (Başta Gizli) -->
+    <!-- Sonuç ve Hata Mesajları -->
     <div id="successSection" class="text-center mt-4" style="display: none;">
         <div class="alert alert-success">
             <i class="bi bi-check-circle-fill"></i> Video işleme tamamlandı!
@@ -58,7 +91,6 @@
         </a>
     </div>
 
-    <!-- Hata Mesajı -->
     <div id="errorAlert" class="alert alert-danger mt-4" style="display: none;">
         <i class="bi bi-exclamation-triangle-fill"></i>
         <span id="errorText"></span>
@@ -67,11 +99,16 @@
     <!-- İşlem Geçmişi -->
     <div class="card bg-dark text-white mt-4">
         <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-list-ul"></i> İşlem Geçmişi</h5>
+            <h5 class="mb-0">
+                <i class="bi bi-clock-history"></i> İşlem Geçmişi
+                <button id="clearLogsBtn" class="btn btn-sm btn-outline-light float-end">
+                    <i class="bi bi-trash"></i> Temizle
+                </button>
+            </h5>
         </div>
         <div class="card-body p-0">
             <ul id="processLogs" class="list-group list-group-flush" style="max-height: 200px; overflow-y: auto;">
-                <li class="list-group-item bg-secondary text-white">
+                <li class="list-group-item bg-dark text-white">
                     <i class="bi bi-hourglass-top"></i> Sistem başlatıldı...
                 </li>
             </ul>
@@ -79,65 +116,42 @@
     </div>
 </div>
 
-<!-- Socket.io Bağlantısı -->
+<!-- Gerekli Kütüphaneler -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
 
 <script>
-    // Socket Bağlantısı
+    // Socket Bağlantısı ve Durum Yönetimi
     const socket = io('http://' + window.location.hostname + ':5000');
     let startTime = null;
+    let currentSegmentStartTime = null;
+    const processedSegments = [];
+    let segmentTimeInterval = null;
 
-    // İlerleme Çubuklarını Güncelle
-    function updateProgress(barId, percentId, value) {
-        const bar = document.getElementById(barId);
-        const percentElement = document.getElementById(percentId);
-        const percent = Math.min(100, Math.max(0, value));
+    // DOM Yüklendiğinde
+    document.addEventListener('DOMContentLoaded', () => {
+        startTime = new Date();
+        addLog('Sistem başlatıldı', 'bi-power');
 
-        // Çubuk Güncelleme
-        bar.style.width = `${percent}%`;
-        percentElement.textContent = `%${percent.toFixed(1)}`;
-
-        // Renk Değişimi (kırmızı -> sarı -> yeşil)
-        bar.className = bar.className.replace(/bg-\w+/g, '');
-        if (percent < 30) {
-            bar.classList.add('bg-danger');
-        } else if (percent < 70) {
-            bar.classList.add('bg-warning');
-        } else {
-            bar.classList.add('bg-success');
-        }
-
-        // Tahmini süre hesaplama
-        if (barId === 'progressBar' && percent > 0) {
-            updateTimeEstimation(percent);
-        }
-    }
-
-    // Tahmini Kalan Süre
-    function updateTimeEstimation(progress) {
-        if (!startTime) startTime = new Date();
-
-        const elapsed = (new Date() - startTime) / 1000; // saniye
-        const remaining = (elapsed / progress) * (100 - progress);
-
-        document.getElementById('timeRemaining').textContent =
-            `Tahmini kalan süre: ${Math.round(remaining)} saniye`;
-    }
-
-    // Geçmişe Kayıt Ekle
-    function addLog(message, icon = 'bi-info-circle', type = 'info') {
-        const logEntry = document.createElement('li');
-        logEntry.className = `list-group-item ${type === 'error' ? 'list-group-item-danger' : 'bg-dark text-white'}`;
-        logEntry.innerHTML = `
-            <i class="bi ${icon}"></i> ${message}
-            <small class="float-end text-muted">${moment().format('HH:mm:ss')}</small>
-        `;
-        document.getElementById('processLogs').appendChild(logEntry);
-    }
+        // Log temizleme butonu
+        document.getElementById('clearLogsBtn').addEventListener('click', () => {
+            document.getElementById('processLogs').innerHTML = '';
+            addLog('Log kayıtları temizlendi', 'bi-trash', 'warning');
+        });
+    });
 
     // Socket Olayları
+    socket.on('connect', () => {
+        document.getElementById('sessionIdDisplay').textContent = socket.id;
+        document.getElementById('sessionInfo').style.display = 'flex';
+        addLog(`WebSocket bağlantısı kuruldu (ID: ${socket.id})`, 'bi-plug');
+    });
+
+    socket.on('disconnect', () => {
+        addLog('Sunucu bağlantısı kesildi', 'bi-plug-fill', 'error');
+    });
+
     socket.on('progress', (data) => {
         updateProgress('progressBar', 'progressPercent', data.progress);
     });
@@ -148,47 +162,180 @@
 
     socket.on('segment_started', (data) => {
         document.getElementById('segmentName').textContent = data.filename;
-        addLog(`Yeni segment başladı: ${data.filename}`, 'bi-play-fill');
+        currentSegmentStartTime = new Date();
+
+        // Segment süresi güncelleme
+        if (segmentTimeInterval) clearInterval(segmentTimeInterval);
+        segmentTimeInterval = setInterval(updateSegmentTime, 1000);
+
+        addLog(`Segment başladı: ${data.filename}`, 'bi-play-fill');
+    });
+
+    socket.on('segment_completed', (data) => {
+        addProcessedSegment(data.filename);
+        addLog(`Segment tamamlandı: ${data.filename}`, 'bi-check-circle', 'success');
+
+        if (segmentTimeInterval) {
+            clearInterval(segmentTimeInterval);
+            segmentTimeInterval = null;
+        }
     });
 
     socket.on('processing_complete', (data) => {
         if (data.success) {
-            updateProgress('progressBar', 'progressPercent', 100);
-            updateProgress('segmentProgressBar', 'segmentProgressPercent', 100);
-            document.getElementById('successSection').style.display = 'block';
-            addLog('İşlem başarıyla tamamlandı!', 'bi-check2-circle', 'success');
-
-            document.getElementById('showResultBtn').onclick = () => {
-                window.location.href = `/upload_success?video=${encodeURIComponent(data.processed_filename)}`;
-            };
+            completeProcessing(data.processed_filename);
         } else {
-            document.getElementById('errorText').textContent = data.message;
-            document.getElementById('errorAlert').style.display = 'block';
-            addLog(`Hata: ${data.message}`, 'bi-exclamation-triangle', 'error');
+            showError(data.message);
         }
     });
 
-    // Sayfa yüklendiğinde başlangıç zamanını ayarla
-    document.addEventListener('DOMContentLoaded', () => {
-        startTime = new Date();
-        addLog('WebSocket bağlantısı kuruldu', 'bi-plug');
-    });
+    // Yardımcı Fonksiyonlar
+    function updateProgress(barId, percentId, value) {
+        const bar = document.getElementById(barId);
+        const percent = Math.min(100, Math.max(0, value));
+
+        bar.style.width = `${percent}%`;
+        document.getElementById(percentId).textContent = `%${percent.toFixed(1)}`;
+
+        // Renk geçişleri
+        bar.className = bar.className.replace(/bg-\w+/g, '');
+        if (percent < 30) bar.classList.add('bg-danger');
+        else if (percent < 70) bar.classList.add('bg-warning');
+        else bar.classList.add('bg-success');
+
+        if (barId === 'progressBar' && percent > 0) {
+            updateTimeEstimation(percent);
+        }
+    }
+
+    function updateTimeEstimation(progress) {
+        if (!startTime) startTime = new Date();
+        const elapsed = (new Date() - startTime) / 1000;
+        const remaining = (elapsed / progress) * (100 - progress);
+
+        let timeText;
+        if (remaining > 60) {
+            const mins = Math.floor(remaining / 60);
+            const secs = Math.round(remaining % 60);
+            timeText = `Tahmini kalan süre: ${mins} dakika ${secs} saniye`;
+        } else {
+            timeText = `Tahmini kalan süre: ${Math.round(remaining)} saniye`;
+        }
+
+        document.getElementById('timeRemaining').textContent = timeText;
+    }
+
+    function updateSegmentTime() {
+        if (currentSegmentStartTime) {
+            const elapsed = Math.floor((new Date() - currentSegmentStartTime) / 1000);
+            document.getElementById('segmentTime').textContent = `${elapsed} saniyedir işleniyor`;
+        }
+    }
+
+    function addProcessedSegment(filename) {
+        // Boş mesajı kaldır
+        const emptyMsg = document.querySelector('#segmentList .list-group-item.bg-secondary');
+        if (emptyMsg) emptyMsg.remove();
+
+        const timestamp = new Date();
+        processedSegments.push({ filename, timestamp });
+
+        const segmentItem = document.createElement('div');
+        segmentItem.className = 'list-group-item bg-dark text-white';
+        segmentItem.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-check-circle text-success me-2"></i>
+                    ${filename.split('/').pop()}
+                </div>
+                <div>
+                    <a href="/view_segment?file=${encodeURIComponent(filename)}"
+                       class="btn btn-sm btn-outline-light">
+                        <i class="bi bi-eye me-1"></i> Görüntüle
+                    </a>
+                </div>
+            </div>
+            <small class="text-muted d-block mt-1">
+                <i class="bi bi-clock me-1"></i>
+                ${moment(timestamp).format('HH:mm:ss')}
+            </small>
+        `;
+
+        document.getElementById('segmentList').prepend(segmentItem);
+        document.getElementById('processedCount').textContent = processedSegments.length;
+        document.getElementById('processedCount').className = 'badge bg-success float-end';
+    }
+
+    function completeProcessing(filename) {
+        updateProgress('progressBar', 'progressPercent', 100);
+        updateProgress('segmentProgressBar', 'segmentProgressPercent', 100);
+
+        // Aktif segment bilgisini güncelle
+        document.getElementById('segmentName').textContent = "Tüm segmentler işlendi";
+        document.getElementById('segmentTime').textContent = "";
+
+        // Tamamlanma panelini göster
+        document.getElementById('successSection').style.display = 'block';
+        document.getElementById('showResultBtn').onclick = () => {
+            window.location.href = `/upload_success?video=${encodeURIComponent(filename)}`;
+        };
+
+        addLog('Tüm işlemler başarıyla tamamlandı!', 'bi-check2-all', 'success');
+    }
+
+    function showError(message) {
+        document.getElementById('errorText').textContent = message;
+        document.getElementById('errorAlert').style.display = 'block';
+        addLog(`Hata: ${message}`, 'bi-exclamation-triangle', 'error');
+    }
+
+    function addLog(message, icon = 'bi-info-circle', type = 'info') {
+        const logEntry = document.createElement('li');
+        logEntry.className = `list-group-item ${type === 'error' ? 'list-group-item-danger' :
+                             type === 'success' ? 'list-group-item-success' : 'bg-dark text-white'}`;
+        logEntry.innerHTML = `
+            <i class="bi ${icon}"></i> ${message}
+            <small class="float-end text-muted">${moment().format('HH:mm:ss')}</small>
+        `;
+        document.getElementById('processLogs').appendChild(logEntry);
+        document.getElementById('processLogs').scrollTop = document.getElementById('processLogs').scrollHeight;
+    }
 </script>
 
 <style>
     .progress-bar {
         transition: width 0.5s ease;
     }
-    #successSection {
+    #sessionInfo {
+        animation: fadeIn 0.5s ease-out;
+        word-break: break-all;
+        padding: 0.35rem 1rem;
+        align-items: center;
+    }
+    #successSection, #errorAlert {
         animation: fadeIn 0.5s ease-out;
     }
-    #processLogs {
+    #segmentList, #processLogs {
         scrollbar-width: thin;
         scrollbar-color: #495057 #212529;
     }
+    .list-group-item {
+        border-color: #495057;
+        transition: all 0.3s ease;
+    }
+    .btn-outline-light {
+        transition: all 0.3s ease;
+    }
+    .btn-outline-light:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
     @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
+        from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
+    }
+    .font-monospace {
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
     }
 </style>
 {% endblock %}
