@@ -8,7 +8,7 @@
 
         {% for i in range(3) %}
         <div class="col-md-4 mb-4">
-            <a href="#" class="text-decoration-none">
+            <a href="{{ url_for('district_camera', city_name=city_name, district_name=districts[i].name) }}" class="text-decoration-none">
                 <div class="card h-100 text-center shadow camera-card">
                     <img src="{{ districts[i].image_url if districts and i < districts|length else '' }}"
                          class="card-img-top" alt="Kamera">

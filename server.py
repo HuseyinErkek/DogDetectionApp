@@ -38,6 +38,11 @@ def city_cameras(city_name):
     districts = cities.get(city_name.lower(), [])
     return render_template("camera.html", city_name=city_name, districts=districts)
 
+@DogDetec.route('/city/<city_name>/<district_name>')
+def district_camera(city_name, district_name):
+    return render_template('district_camera.html', city_name=city_name, district_name=district_name)
+
+
 @DogDetec.route('/howto')
 def howto():
     return render_template("howto.html")

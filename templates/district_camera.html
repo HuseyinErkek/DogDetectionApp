@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}{{ district_name | capitalize }} Kamerası{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/district_camera.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container text-center district-camera-page">
+    <h2 class="district-title">{{ district_name | capitalize }} - Canlı Yayın</h2>
+
+    <div class="district-video-wrapper">
+        <video class="district-video-player" width="720" height="480" controls>
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <input type="hidden" class="district-data-city" value="{{ city_name }}">
+    <input type="hidden" class="district-data-district" value="{{ district_name }}">
+</div>
+{% endblock %}
