@@ -118,7 +118,7 @@ class VideoProcessor:
                                     conf=0.5,
                                     iou=0.5,
                                     persist=True,
-                                    tracker="botsort.yaml",
+                                    tracker="botsort.yaml"
                                 )
 
                                 if results:

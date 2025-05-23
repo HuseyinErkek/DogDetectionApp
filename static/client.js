@@ -2,6 +2,10 @@ const socket = io('http://127.0.0.1:5000');
 const segmentList = document.getElementById('segmentList');
 let sessionId = null;
 
+
+console.log("script calisti")
+
+
 socket.on('connect', () => {
     console.log('Sunucuya bağlanıldı.');
      console.log("Socket bağlı:", socket.id); // Bu da request.sid ile eşleşir
@@ -12,17 +16,17 @@ socket.on('connect', () => {
     segmentList.appendChild(testItem);
 });
 
-socket.on('session_id', (data) => {
-    sessionId = data.sessionId;
-    console.log('Sunucudan alınan sessionId:', sessionId);
-
+document.addEventListener('DOMContentLoaded', () => {
+  socket.on('session_id', (data) => {
     const input = document.getElementById('sessionIdInput');
     if (input) {
-        input.value = sessionId;
+      input.value = data.sessionId;
     } else {
-        console.warn('Hidden input sessionIdInput bulunamadı.');
+      console.warn('Hidden input sessionIdInput bulunamadı.');
     }
+  });
 });
+
 
 
 socket.on('segment_started', (data) => {
