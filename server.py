@@ -2,7 +2,7 @@ import os
 import threading
 import uuid
 
-from flask import render_template, request, redirect, url_for, session
+from flask import render_template, request, redirect, url_for, session, jsonify
 from flask_socketio import leave_room, emit, join_room
 from werkzeug.utils import secure_filename
 
